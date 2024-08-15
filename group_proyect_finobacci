@@ -1,0 +1,197 @@
+module Solucion where
+import Data.Char
+
+finobacci!
+
+-- Ejercicio 1
+esMinuscula :: Char -> Bool
+esMinuscula ' ' = False
+esMinuscula c = 97 <= ord c && ord c <= 122
+
+-- Ejercicio 2
+letraANatural :: Char -> Int
+letraANatural  c = (ord c) - 97
+
+-- Ejercicio 3
+estaEnElRango :: Char -> Int -> Char --nos aseguramos de que mantenga un comportamiento cíclico
+estaEnElRango c n| ((ord c) + n) > 122 = chr (97 - 122 + ((ord c) + n) - 1)
+            | ((ord c) + n) < 97 = chr (122 - (97 - ((ord c) + n)) + 1)
+            | otherwise = chr ((ord c) + n)
+
+desplazarAux :: Char -> Int -> Char --evalúa si es minúscula
+desplazarAux c n|esMinuscula c = estaEnElRango c n
+                |otherwise = c
+
+desplazar :: Char -> Int -> Char
+desplazar c n| n >= 0 = desplazarAux c (mod n 26)
+             | otherwise = desplazarAux c ((-1)* (mod (abs n) 26))
+
+-- Ejercicio 4
+cifrar :: String -> Int -> String
+cifrar [] n = []
+cifrar (x:xs) n | esMinuscula x = (desplazar x n : cifrar xs n)
+                | otherwise = (x:cifrar xs n)
+
+-- Ejercicio 5
+descifrar :: String -> Int -> String
+descifrar [] n = []
+descifrar (x:xs) n | esMinuscula x = (desplazar x (-n) : descifrar xs n)
+                   | otherwise = (x:descifrar xs n)
+
+-- Ejercicio 6
+cifrarListaAux :: [String] -> Int -> [String] --cifra la lista a partir de un n
+cifrarListaAux [] _ = []
+cifrarListaAux [x] n = [cifrar x n] 
+cifrarListaAux (x : xs) n = (cifrar x n) : cifrarListaAux xs (n + 1)
+
+cifrarLista :: [String] -> [String]
+cifrarLista a = cifrarListaAux a 0
+
+-- Ejercicio 7
+cantidadApariciones :: Char -> String -> Float
+cantidadApariciones _ [] = 0
+cantidadApariciones letra (y:ys) | esMinuscula letra && letra == y = 1 + cantidadApariciones letra ys
+                                 | otherwise = cantidadApariciones letra ys
+
+cantidadElemString :: String -> Float 
+cantidadElemString [] = 0
+cantidadElemString (x:xs)| esMinuscula x = 1 + cantidadElemString xs
+                         | otherwise = cantidadElemString xs
+
+porcentaje :: Char -> String -> Float
+porcentaje c (x:xs) = (cantidadApariciones c (x:xs) * 100) / cantidadElemString (x:xs)
+
+estaEnElRangoFrecuencia :: Int -> String -> [Float]
+estaEnElRangoFrecuencia n [] = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+estaEnElRangoFrecuencia n _ | n == 123 = [] 
+estaEnElRangoFrecuencia n xs =  porcentaje (chr n) xs:estaEnElRangoFrecuencia (n + 1) xs
+
+algunaMinuscula :: String -> Bool
+algunaMinuscula [] = False
+algunaMinuscula [x] = esMinuscula x 
+algunaMinuscula (x : xs) = esMinuscula x || algunaMinuscula xs
+
+frecuencia :: String -> [Float]
+frecuencia (x : xs)| algunaMinuscula (x : xs) = estaEnElRangoFrecuencia 97 (x : xs)
+                   | otherwise = [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+
+-- Ejercicio 8
+letraConMasFrecuencia :: String -> Char
+letraConMasFrecuencia [s] = s
+letraConMasFrecuencia (s:xs)|esMinuscula s == False = letraConMasFrecuencia xs
+                            |(cantidadApariciones s (s:xs)) >= (cantidadApariciones(letraConMasFrecuencia (xs)) (s:xs)) = s
+                            |otherwise = letraConMasFrecuencia xs 
+
+cifradoMasFrecuente :: String -> Int -> (Char, Float)
+cifradoMasFrecuente (s:xs) n| algunaMinuscula (s : xs) == False = (' ', 0)
+                            | otherwise = (letraConMasFrecuencia (cifrar (s:xs) n), porcentaje ((letraConMasFrecuencia (cifrar (s:xs) n))) (cifrar (s:xs) n))
+
+-- Ejercicio 9
+esDescifradoAux :: String -> String -> Int -> Bool --se fija si el primer string es el cifrado del segundo para algún n
+esDescifradoAux _ _ 0 = False
+esDescifradoAux (x:xs) (y:ys) n|(x:xs) == cifrar (y:ys) n = True
+                               |otherwise = esDescifradoAux (x:xs) (y:ys) (n-1)
+
+esDescifrado :: String -> String -> Bool 
+esDescifrado [] [] = True
+esDescifrado [] _ = False
+esDescifrado _ [] = False
+esDescifrado (x:xs) (y:ys) = esDescifradoAux (x:xs) (y:ys) 26
+
+-- Ejercicio 10
+descifrarAux :: String -> String -> Int -> Bool --se fija si el primer string es el descifrado del segundo para algún n 
+descifrarAux _ _ 0 = False
+descifrarAux x y n|x == descifrar y n = True
+                  |otherwise = descifrarAux x y (n-1)
+
+pertenece :: (String, String) -> [(String, String)] -> Bool
+pertenece _ [] = False
+pertenece (a, b) (x : xs)| (a == fst x && b == snd x) = True
+                         | otherwise = pertenece (a, b) xs
+
+quitarTodos :: (String, String) -> [(String, String)] -> [(String, String)]
+quitarTodos _ [] = []
+quitarTodos x (y : ys)| x == y = quitarTodos x ys
+                      | otherwise = (y : quitarTodos x ys)
+
+eliminarRepetidos :: [(String, String)] -> [(String, String)]
+eliminarRepetidos [] = []
+eliminarRepetidos (x : xs)| pertenece x (x : xs) = (x : eliminarRepetidos (quitarTodos x xs))
+                          | otherwise = (x : eliminarRepetidos xs) 
+
+todosLosDescifrados :: [String] -> [(String, String)]
+todosLosDescifrados [] = []
+todosLosDescifrados [x]  | hayAlgunaMinuscula x = []
+                         | otherwise = [(x,x)]
+todosLosDescifrados (x:y:xs)|descifrarAux x y 25 = eliminarRepetidos  ([(x, y), (y, x)] ++ todosLosDescifrados (x : xs) ++ todosLosDescifrados (y:xs))
+                            |otherwise = eliminarRepetidos (todosLosDescifrados (x:xs) ++ todosLosDescifrados (y : xs))
+
+hayAlgunaMinuscula :: String -> Bool
+hayAlgunaMinuscula [x] = esMinuscula x
+hayAlgunaMinuscula (x:xs) | esMinuscula x = True
+                          | otherwise = hayAlgunaMinuscula xs
+
+                            
+-- Ejercicio 11 (código vigenere)
+longitud :: String -> Int
+longitud [x] = 1
+longitud (x : xs) = 1 + longitud xs
+
+expandirClave :: String -> Int -> String
+expandirClave (x:xs) 1 = [x]
+expandirClave (x:xs) n| n <= longitud (x : xs) = [x] ++ expandirClave xs (n -1)
+                      | otherwise = (x : xs) ++ expandirClave (x : xs) (n - longitud (x : xs))
+
+
+-- Ejercicio 12
+cifrarVigenere :: String -> String -> String
+cifrarVigenere [] _ = []
+cifrarVigenere (x : xs) [y]| esMinuscula x = cifrar (x : xs) (letraANatural y)
+                           | not (esMinuscula x) = (x : cifrar xs (letraANatural y))
+cifrarVigenere (x:xs) (y:ys)| esMinuscula x = desplazar x (letraANatural y) : cifrarVigenere xs (tail (expandirClave (y:ys) (longitud (x:xs))))
+                            | otherwise = (x : cifrarVigenere xs ys)
+
+
+-- Ejercicio 13
+descifrarVigenere  :: String -> String -> String 
+descifrarVigenere [] _ = []
+descifrarVigenere (x : xs) [y]| esMinuscula x = descifrar (x : xs) (letraANatural y)
+                              | not (esMinuscula x) = (x : descifrar xs (letraANatural y))
+descifrarVigenere (x : xs) (y : ys)| esMinuscula x = desplazar x ((-1)* (letraANatural y)) : descifrarVigenere xs (tail (expandirClave (y:ys) (longitud (x:xs))))
+                                   | otherwise = (x : descifrarVigenere xs ys)
+
+-- Ejercicio 14
+restarLetraANatural :: String -> String -> Int 
+restarLetraANatural [] _ = 0
+restarLetraANatural (x : xs) (y : ys)| longitud (x : xs) <= longitud (y : ys) && esMinuscula x && esMinuscula y = abs (letraANatural x - letraANatural y) + restarLetraANatural xs ys
+                                     | longitud (x : xs) <= longitud (y : ys) && not (esMinuscula x && esMinuscula y) = restarLetraANatural xs ys
+                                     | longitud (x : xs) > longitud (y : ys) && esMinuscula x && esMinuscula y = restarLetraANatural (x : xs) (expandirClave (y : ys) (longitud (x : xs)))
+                                     | longitud (x : xs) > longitud (y : ys) && not (esMinuscula x && esMinuscula y) = restarLetraANatural xs (expandirClave (y : ys) (longitud (x : xs)))
+
+peorCifrado :: String -> [String] -> String
+peorCifrado [] _ = []
+peorCifrado c [x] = x 
+peorCifrado c [x, y]| restarLetraANatural c (cifrarVigenere c x) <= restarLetraANatural c (cifrarVigenere c y) = x 
+                    | restarLetraANatural c (cifrarVigenere c y) < restarLetraANatural c (cifrarVigenere c x) = y
+peorCifrado c (x : y : xs)| restarLetraANatural c (cifrarVigenere c x) <= restarLetraANatural c (cifrarVigenere c y) && restarLetraANatural c (cifrarVigenere c x) <= restarLetraANatural c (peorCifrado c xs) = x 
+                          | restarLetraANatural c (cifrarVigenere c y) < restarLetraANatural c (cifrarVigenere c x) && restarLetraANatural c (cifrarVigenere c y) <= restarLetraANatural c (peorCifrado c xs) = y 
+                          | otherwise = peorCifrado c xs
+
+
+-- Ejercicio 15
+auxCombinaciones :: String -> [String] -> String -> [(String, String)] -- devuelve aquellas combinaciones  en el que el tercer dato ingresado es el resultado de cifrar el primer dato ingresado con alguno/algunos de una lista de strings
+auxCombinaciones [] _ _ = []
+auxCombinaciones _ _ [] = []
+auxCombinaciones x [y] c| cifrarVigenere x y == c = [(x, y)]
+                        | not (cifrarVigenere x y == c) = []
+auxCombinaciones x (y : ys) c| cifrarVigenere x y == c = [(x, y)] ++ auxCombinaciones x ys c 
+                             | otherwise = auxCombinaciones x ys c
+
+
+combinacionesVigenere :: [String] -> [String] -> String -> [(String, String)]
+combinacionesVigenere [] _ _ = []
+combinacionesVigenere _ [] _ = []
+combinacionesVigenere _ _ [] = []
+combinacionesVigenere [x] [y] c| cifrarVigenere x y == c = [(x, y)]
+                               | not (cifrarVigenere x y == c) = []
+combinacionesVigenere (x : xs) (y : ys) c = auxCombinaciones x (y : ys) c ++ combinacionesVigenere xs (y : ys) c
